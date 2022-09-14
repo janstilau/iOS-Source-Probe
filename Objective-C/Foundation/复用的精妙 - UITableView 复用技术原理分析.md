@@ -8,7 +8,9 @@
 
 ## Chameleon PROJECT
 
-[*Chameleon*](https://github.com/BigZaphod/Chameleon) 是我长期以来一直关注的一个项目。接触过 macOS 开发的人肯定多少有写了解。（虽然这个项目在三年以前就已经停更，但是在原理上还是有很高的参考价值。）*Chameleon* 用于将 iOS 的功能迁移到 macOS 上，并且在其中为 macOS 实现了一套与 iOS UIKit 同名的框架，并且其代码都为开源。由于 *Chameleon* 属于对苹果早期源码的逆向工程项目，所以我们可以据此来对 iOS 一些闭源库展开学习和思路的借鉴。
+[*Chameleon*](https://github.com/BigZaphod/Chameleon) 是我长期以来一直关注的一个项目。接触过 macOS 开发的人肯定多少有写了解。（虽然这个项目在三年以前就已经停更，但是在原理上还是有很高的参考价值。）*Chameleon* 用于将 iOS 的功能迁移到 macOS 上，并且在其中为 macOS 实现了一套与 iOS UIKit 同名的框架，并且其代码都为开源。
+
+由于 *Chameleon* 属于对苹果早期源码的逆向工程项目，所以我们可以据此来对 iOS 一些闭源库展开学习和思路的借鉴。
 
 > *Chameleon* 所迁移的 iOS 版本为 `3.2` ，如今已经没有人使用，所以其代码和思路我们只能用来了解。例如在 iOS 8 之后推出的根据 `autoLayout` 自动计算 `cell` 高度的功能，在其中无法体现。
 
@@ -16,7 +18,9 @@
 
 ## UITableView 的初始化方法
 
-当我们定义一个 `UITableView` 对象的时候，需要对这个对象进行初始化。最常用的方法莫过于 `- (id)initWithFrame:(CGRect)frame style:(UITableViewStyle)theStyle`。下面跟着这个初始化入口，逐渐来分析代码：
+当我们定义一个 `UITableView` 对象的时候，
+
+需要对这个对象进行初始化。最常用的方法莫过于 `- (id)initWithFrame:(CGRect)frame style:(UITableViewStyle)theStyle`。下面跟着这个初始化入口，逐渐来分析代码：
 
 ```ObjC
 - (id)initWithFrame:(CGRect)frame style:(UITableViewStyle)theStyle {

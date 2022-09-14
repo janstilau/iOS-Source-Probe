@@ -8,7 +8,11 @@
 
 ## Optional 引入由来
 
-Optional 特性是 Swift 中的一大特色，用来解决变量是否存有 `nil` 值的情况。这样既可减少在数据传递过程中，由于 `nil` 带来的不确定性，防止未处理 `nil` 而带来的程序崩溃。
+Optional 特性是 Swift 中的一大特色，用来解决变量是否存有 `nil` 值的情况。
+
+这样既可减少在数据传递过程中，由于 `nil` 带来的不确定性，防止未处理 `nil` 而带来的程序崩溃。
+
+
 
 Optional 在高级语言中其实并不是 Swift 的首创，而是效仿其他语言学习来的特性。2015 年的时候，为了迎合 Swift 的 Optional 特性，在 Objective-C 中也引入了 Nullability 特性。Swift 作为一个强类型语言，需要在编译期进行安全检查，所以引入了类型推断的特性。为了保证推断的安全，于是又引入了 Optional 特性。
 
@@ -32,13 +36,24 @@ int main() {
 }
 ```
 
-在使用迭代器的时候，我们往往要判断迭代器是否已经遍历到末尾，才可以去继续操作。因为有**值不存在的情况**，所以在以往的操作中都会使用**一个特殊值来表示某种特殊的含义**，通常情况下对于这种特殊值称作 *Sentinal Value*，在很多算法书中称其为**哨兵值**。使用哨兵值会有这么两个弊端：其一是**形如 `std::find` 或者是 `std::binary_search` 这种方法都从它们各自的签名以及调用上，都无法得知它的错误情况，以及对应的错误情况处理方式**。另外，以哨兵值的方式，使我们无法通过编译器来强制错误处理的行为。因为编译器对此是毫无感知的，其哨兵值都是由语言作者或是后期开发人员的约定俗成，例如 C 中文件读取的 `open` 函数，在读取失败下为 `-1`，或是上例中 `numbers.end()` 这个迭代位，只有在程序崩溃之后，才能显出原形。
+在使用迭代器的时候，我们往往要判断迭代器是否已经遍历到末尾，才可以去继续操作。因为有**值不存在的情况**，所以在以往的操作中都会使用**一个特殊值来表示某种特殊的含义**，通常情况下对于这种特殊值称作 *Sentinal Value*，在很多算法书中称其为**哨兵值**。
+
+使用哨兵值会有这么两个弊端：其一是**形如 `std::find` 或者是 `std::binary_search` 这种方法都从它们各自的签名以及调用上，都无法得知它的错误情况，以及对应的错误情况处理方式**。另外，以哨兵值的方式，使我们无法通过编译器来强制错误处理的行为。
+
+因为编译器对此是毫无感知的，其哨兵值都是由语言作者或是后期开发人员的约定俗成，例如 C 中文件读取的 `open` 函数，在读取失败下为 `-1`，或是上例中 `numbers.end()` 这个迭代位，只有在程序崩溃之后，才能显出原形。
+
+这是关键问题所在, 没有办法使用统一的方式, 来完成对于特殊值的约定. Swfit 的 Optinal 可以使用编译器来确保这一行为的正确性. 
+
+
 
 为了突出 Optional 的必要性，[泊学网](https://boxueio.com/series/optional-is-not-an-option/ebook/138)（笔者也是最近才看过的，这里推荐一下😎）中给出了一个哨兵值方案也无法解决的问题，这是一个 Objective-C 的例子：
 
 ```ObjC
 NSString *tmp = nil;
 
+这里产生问题是因为, nil 的返回值, 一定都是全部归零的一块内存空间. 
+但是 NSNotFound 的特殊值是 -1, 因为作为索引来说, 0 是一个有意义的值. 
+nil 返回值全部归零, 以及索引从 0 开始的约定冲突了, 这种人为设定的冲突, 在源码级别产生了 Bug.
 if ([tmp rangeOfString: @"Swift"].location != NSNotFound) {
     // Will print out for nil string
     NSLog(@"Something about swift");
@@ -70,7 +85,7 @@ public enum Optional<Wrapped> : ExpressibleByNilLiteral {
 
 当然在枚举中还有很多方法并没有列出，之后我们详细来谈。在枚举定义之前，有一个属性标识（attribute）  - `@_fixed_layout`，由此标识修饰的类型在 SIL （Swift intermediate
  Language）生成阶段进行处理。它的主要作用是将这个类型确定为固定布局，也就是在内存中这个类型的空间占用确定且无法改变。
- 
+
 由于 Optional 是多类型的，所以我们通过 `<Wrapped>` 来声明泛型。`ExpressibleByNilLiteral` 协议仅仅定义了一个方法：
 
 ```swift
@@ -94,6 +109,7 @@ extension Array where Element: Equatable {
             if self[index] == element {
                 return .some(index)
             }
+            // formIndex 是一个 Collection 中的方法, 是一个 primitive method.
             formIndex(after: &index)
         }
         return .none
@@ -147,6 +163,7 @@ if let author = author {
 
 ```swift
 var AUTHOR: String? = author.map { $0.uppercased() } // Optional("GUA")
+这种写法要优雅的太多了, 自己的代码里面, 还是不习惯于使用 map, flatmap 这种小函数, 来做常见的逻辑处理. 
 ```
 
 这样我们就得到了一个新的 Optional 常量。那么 `map` 方法对于 Optional 量是怎么处理的呢？来阅读以下源码：
@@ -167,7 +184,9 @@ public func map<U>(
 
 首先要说明的是 `Wrapped` ，这是 `Optional` 类型的泛型参数，表示 Optional 实际包装的的值类型。
 
-另外来解释一下 `rethrows` 关键字：有这么一个场景，在很多方法中要传入一个闭包来执行，当传入的闭包中没有异常我们就不需要处理，有异常的时候，我们需要使用 `throws` 关键字来声明以下，代表我们需要进行异常处理。但是某些情况下，一个闭包函数本身不会产生异常，但是作为其他函数的参数就会出现异常情况。这时候我们使用 `rethrows` 对函数进行声明从而向上层传递异常情况。
+另外来解释一下 `rethrows` 关键字：有这么一个场景，在很多方法中要传入一个闭包来执行，当传入的闭包中没有异常我们就不需要处理，有异常的时候，我们需要使用 `throws` 关键字来声明以下，代表我们需要进行异常处理。
+
+但是某些情况下，一个闭包函数本身不会产生异常，但是作为其他函数的参数就会出现异常情况。这时候我们使用 `rethrows` 对函数进行声明从而向上层传递异常情况。
 
 暂且我们先不去考虑异常情况，根据源码的思路自行实现一个 `map` 方法来处理 Optional 问题：
 
@@ -207,6 +226,7 @@ public func flatMap<U>(
     ) rethrows -> U? {
     switch self {
     case .some(let y):
+      // transform 本身, 就是一个返回 Optinal 类型的闭包. 
         return try transform(y)
     case .none:
         return .none
